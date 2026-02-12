@@ -202,17 +202,41 @@
     } else {
       // Prevent multiple decimals
       if (digit === '.' && state.entry.includes('.')) return;
-      // Limit length
+      // Limit length (count only digits)
       if (state.entry.replace(/[^0-9]/g, '').length >= 12) return;
-      state.entry += digit;
+      
+      // If entry is just "-", handle decimal specially: "-" + "." -> "-0."
+      if (state.entry === '-' && digit === '.') {
+        state.entry = '-0.';
+      } else {
+        state.entry += digit;
+      }
     }
     
     updateDisplay();
   }
 
   function negateEntry() {
-    if (state.entry === '0') return;
+    clearMessage();
+    state.rclMode = false;
     
+    // If entry buffer is empty (default state), start a negative number
+    if (state.isNewEntry && state.entry === '0') {
+      state.entry = '-';
+      state.isNewEntry = false;
+      updateDisplay();
+      return;
+    }
+    
+    // If entry is just "-", toggle back to positive (empty/0)
+    if (state.entry === '-') {
+      state.entry = '0';
+      state.isNewEntry = true;
+      updateDisplay();
+      return;
+    }
+    
+    // Toggle the sign of the current entry
     if (state.entry.startsWith('-')) {
       state.entry = state.entry.substring(1);
     } else {
@@ -268,12 +292,15 @@
   }
 
   /**
-   * Check if entry buffer has a value (user has typed something)
+   * Check if entry buffer has a complete value (user has typed a number)
    */
   function hasEntryValue() {
-    // Entry buffer has a value if it's not the default '0' with isNewEntry flag
-    // or if isNewEntry is false (user has typed)
-    return !state.isNewEntry || state.entry !== '0';
+    // Entry buffer has a value if:
+    // - isNewEntry is false (user has started typing) AND
+    // - entry is not just "-" (incomplete negative number)
+    if (state.isNewEntry) return false;
+    if (state.entry === '-') return false;
+    return true;
   }
 
   /**

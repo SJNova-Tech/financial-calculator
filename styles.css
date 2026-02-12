@@ -194,6 +194,16 @@ body {
   font-family: var(--font-mono);
 }
 
+.tvm-hint {
+  grid-column: 1 / -1;
+  font-size: 0.65rem;
+  font-style: italic;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 0.5rem;
+  opacity: 0.7;
+}
+
 /* ===== Mode Panels ===== */
 /* TVM panel uses display:contents to preserve grid layout */
 #tvm-panel {
