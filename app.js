@@ -274,6 +274,32 @@
     updateDisplay();
   }
 
+  /**
+   * Clear a single TVM register (set to null)
+   * Called when user presses a TVM key with empty entry buffer
+   */
+  function clearRegister(varName) {
+    clearMessage();
+    state.rclMode = false;
+    
+    if (['N', 'IY', 'PV', 'PMT', 'FV'].includes(varName)) {
+      state[varName] = null;
+      state.selectedVar = varName;
+      
+      // Clear the computed highlight if this was the computed value
+      if (state.lastComputedVar === varName) {
+        state.lastComputedVar = null;
+      }
+      
+      const label = varName === 'IY' ? 'I/Y' : varName;
+      showMessage(`${label} cleared`, 'info');
+      
+      state.entry = '0';
+      state.isNewEntry = true;
+      updateDisplay();
+    }
+  }
+
   // ===== TVM MATH =====
   
   /**
@@ -572,7 +598,7 @@
     const blankVars = tvmVars.filter(v => state[v] === null);
     
     if (blankVars.length === 0) {
-      showMessage('All values set - clear one to compute', 'info');
+      showMessage('CLEAR ONE VALUE TO COMPUTE', 'info');
       return;
     }
     
@@ -1400,10 +1426,10 @@
       if (state.rclMode) {
         recallVariable(varName);
       } else if (state.isNewEntry && state.entry === '0') {
-        // Just select the variable
-        selectVariable(varName);
+        // Entry buffer is empty - CLEAR this register (set to null)
+        clearRegister(varName);
       } else {
-        // Store entry value
+        // Entry buffer has a value - store it
         storeVariable(varName);
       }
       return;
