@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="description" content="Financial Calculator - Time Value of Money">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FinCalc">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%231a1a2e' width='100' height='100' rx='20'/><text y='65' x='50' text-anchor='middle' font-size='40' fill='%2300d4ff'>TVM</text></svg>">
+  <title>Financial Calculator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="calculator">
+    <!-- Header -->
+    <header class="calc-header">
+      <h1>Financial Calculator</h1>
+    </header>
+
+    <!-- Screen Area -->
+    <div class="screen">
+      <!-- TVM Mode Display -->
+      <div class="mode-panel" id="tvm-panel">
+        <!-- Left: TVM Table -->
+        <div class="tvm-table">
+          <div class="tvm-row" data-var="N">
+            <span class="tvm-label">Number of periods</span>
+            <span class="tvm-key">N</span>
+            <span class="tvm-value" id="display-N">—</span>
+          </div>
+          <div class="tvm-row" data-var="IY">
+            <span class="tvm-label">Interest per year</span>
+            <span class="tvm-key">I/Y</span>
+            <span class="tvm-value" id="display-IY">—</span>
+          </div>
+          <div class="tvm-row" data-var="PV">
+            <span class="tvm-label">Present value</span>
+            <span class="tvm-key">PV</span>
+            <span class="tvm-value" id="display-PV">—</span>
+          </div>
+          <div class="tvm-row" data-var="PMT">
+            <span class="tvm-label">Payment</span>
+            <span class="tvm-key">PMT</span>
+            <span class="tvm-value" id="display-PMT">—</span>
+          </div>
+          <div class="tvm-row" data-var="FV">
+            <span class="tvm-label">Future value</span>
+            <span class="tvm-key">FV</span>
+            <span class="tvm-value" id="display-FV">—</span>
+          </div>
+        </div>
+
+        <!-- Right: Settings Panel -->
+        <div class="settings-panel">
+          <div class="setting-row">
+            <span class="setting-label">Compounding</span>
+            <span class="setting-key">C/Y</span>
+            <span class="setting-value" id="display-CY">12</span>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Payments</span>
+            <span class="setting-key">P/Y</span>
+            <span class="setting-value" id="display-PY">12</span>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Period</span>
+            <span class="setting-value" id="display-BGN">END</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cash Flow Mode Display -->
+      <div class="mode-panel" id="cf-panel" style="display: none;">
+        <div class="cf-header">
+          <span class="cf-title">Cash Flows</span>
+          <span class="cf-count" id="cf-count">0 entries</span>
+        </div>
+        <div class="cf-list" id="cf-list">
+          <div class="cf-row cf-header-row">
+            <span class="cf-label">CF0</span>
+            <span class="cf-value" id="cf-0">—</span>
+          </div>
+        </div>
+        <div class="cf-nav">
+          <span class="cf-index" id="cf-index">CF0</span>
+          <span class="cf-hint">▲▼ to navigate • ENTER to set • DEL to remove</span>
+        </div>
+      </div>
+
+      <!-- Amortization Mode Display -->
+      <div class="mode-panel" id="amort-panel" style="display: none;">
+        <div class="amort-header">
+          <span class="amort-title">Amortization Schedule</span>
+        </div>
+        <div class="amort-content">
+          <div class="amort-row">
+            <span class="amort-label">Period Range</span>
+            <span class="amort-value" id="amort-range">P1 - P1</span>
+          </div>
+          <div class="amort-row">
+            <span class="amort-label">Principal Paid</span>
+            <span class="amort-value" id="amort-principal">—</span>
+          </div>
+          <div class="amort-row">
+            <span class="amort-label">Interest Paid</span>
+            <span class="amort-value" id="amort-interest">—</span>
+          </div>
+          <div class="amort-row">
+            <span class="amort-label">Balance</span>
+            <span class="amort-value" id="amort-balance">—</span>
+          </div>
+        </div>
+        <div class="amort-nav">
+          <span class="amort-hint">▲▼ to change period • ENTER to calculate</span>
+        </div>
+      </div>
+
+      <!-- Entry Display -->
+      <div class="entry-display">
+        <span class="entry-label" id="entry-label"></span>
+        <span class="entry-value" id="entry-value">0</span>
+      </div>
+
+      <!-- Message Area -->
+      <div class="message-area" id="message-area"></div>
+    </div>
+
+    <!-- Keypad -->
+    <div class="keypad">
+      <!-- Row 1: Function keys -->
+      <div class="key-row">
+        <button class="key func" data-action="CPT">CPT</button>
+        <button class="key func" data-action="RCL">RCL</button>
+        <button class="key func" data-action="ENTER">ENTER</button>
+        <button class="key func" data-action="UP">▲</button>
+        <button class="key func" data-action="DOWN">▼</button>
+      </div>
+
+      <!-- Row 2: CF, NPV, IRR -->
+      <div class="key-row">
+        <button class="key func secondary" data-action="CF">CF</button>
+        <button class="key func secondary" data-action="NPV">NPV</button>
+        <button class="key func secondary" data-action="IRR">IRR</button>
+        <button class="key func" data-action="DEL">DEL</button>
+        <button class="key func" data-action="INS">INS</button>
+      </div>
+
+      <!-- Row 3: TVM Variables -->
+      <div class="key-row">
+        <button class="key tvm" data-var="N">N</button>
+        <button class="key tvm" data-var="IY">I/Y</button>
+        <button class="key tvm" data-var="PV">PV</button>
+        <button class="key tvm" data-var="PMT">PMT</button>
+        <button class="key tvm" data-var="FV">FV</button>
+      </div>
+
+      <!-- Row 4: Settings -->
+      <div class="key-row">
+        <button class="key setting" data-var="CY">C/Y</button>
+        <button class="key setting" data-var="PY">P/Y</button>
+        <button class="key setting" data-action="xPY">xP/Y</button>
+        <button class="key setting" data-action="BGN">BGN</button>
+        <button class="key func secondary" data-action="AMORT">AMORT</button>
+      </div>
+
+      <!-- Row 5: Numbers 7-8-9 + operators -->
+      <div class="key-row">
+        <button class="key num" data-digit="7">7</button>
+        <button class="key num" data-digit="8">8</button>
+        <button class="key num" data-digit="9">9</button>
+        <button class="key op" data-op="divide">÷</button>
+        <button class="key clear" data-action="CCE">C/CE</button>
+      </div>
+
+      <!-- Row 6: Numbers 4-5-6 + operators -->
+      <div class="key-row">
+        <button class="key num" data-digit="4">4</button>
+        <button class="key num" data-digit="5">5</button>
+        <button class="key num" data-digit="6">6</button>
+        <button class="key op" data-op="multiply">×</button>
+        <button class="key clear reset" data-action="RESET">RESET</button>
+      </div>
+
+      <!-- Row 7: Numbers 1-2-3 + operators -->
+      <div class="key-row">
+        <button class="key num" data-digit="1">1</button>
+        <button class="key num" data-digit="2">2</button>
+        <button class="key num" data-digit="3">3</button>
+        <button class="key op" data-op="subtract">−</button>
+        <button class="key op" data-op="add">+</button>
+      </div>
+
+      <!-- Row 8: 0, decimal, +/-, = -->
+      <div class="key-row">
+        <button class="key num zero" data-digit="0">0</button>
+        <button class="key num" data-action="decimal">.</button>
+        <button class="key op" data-action="negate">+/−</button>
+        <button class="key op equals" data-action="equals">=</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
