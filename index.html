@@ -201,6 +201,27 @@
         <button class="key op equals" data-action="equals">=</button>
       </div>
     </div>
+
+    <!-- Footer with Diagnostics -->
+    <footer class="calc-footer">
+      <button class="diag-btn" id="diag-btn">🔧 Diagnostics</button>
+    </footer>
+  </div>
+
+  <!-- Diagnostics Modal -->
+  <div class="diag-modal" id="diag-modal">
+    <div class="diag-content">
+      <div class="diag-header">
+        <h2>TVM Diagnostics</h2>
+        <button class="diag-close" id="diag-close">✕</button>
+      </div>
+      <div class="diag-body" id="diag-body">
+        <p class="diag-intro">Click "Run Tests" to validate TVM calculations.</p>
+      </div>
+      <div class="diag-footer">
+        <button class="diag-run" id="diag-run">Run Tests</button>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>

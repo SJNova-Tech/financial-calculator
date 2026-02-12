@@ -3,7 +3,7 @@
  * Enables offline functionality through caching
  */
 
-const CACHE_NAME = 'fincalc-v6';
+const CACHE_NAME = 'fincalc-v7';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

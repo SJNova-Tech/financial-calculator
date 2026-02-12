@@ -686,3 +686,208 @@ body {
   background: var(--key-dark);
   border-radius: 4px;
 }
+
+/* ===== Footer & Diagnostics Button ===== */
+.calc-footer {
+  padding: 0.5rem 1rem 0.75rem;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.diag-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.diag-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* ===== Diagnostics Modal ===== */
+.diag-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+.diag-modal.show {
+  display: flex;
+}
+
+.diag-content {
+  background: linear-gradient(180deg, #1e2a4a 0%, #16213e 100%);
+  border-radius: 12px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  max-width: 420px;
+  width: 100%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.diag-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.diag-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-highlight);
+  margin: 0;
+}
+
+.diag-close {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+
+.diag-close:hover {
+  color: var(--text-primary);
+}
+
+.diag-body {
+  padding: 1rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.diag-intro {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-align: center;
+  margin: 0;
+}
+
+.diag-footer {
+  padding: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.diag-run {
+  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+  border: none;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.diag-run:hover {
+  background: linear-gradient(180deg, #4b92ff 0%, #2d5ee8 100%);
+}
+
+.diag-run:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== Test Results ===== */
+.test-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.test-result {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  padding: 0.75rem;
+  border-left: 3px solid var(--text-secondary);
+}
+
+.test-result.pass {
+  border-left-color: var(--text-computed);
+}
+
+.test-result.fail {
+  border-left-color: #ef4444;
+}
+
+.test-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.35rem;
+}
+
+.test-details {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  line-height: 1.5;
+}
+
+.test-details span {
+  display: block;
+}
+
+.test-status {
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 0.35rem;
+}
+
+.test-status.pass {
+  color: var(--text-computed);
+}
+
+.test-status.fail {
+  color: #ef4444;
+}
+
+/* Summary */
+.test-summary {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.test-summary.all-pass {
+  border: 1px solid var(--text-computed);
+}
+
+.test-summary.has-fail {
+  border: 1px solid #ef4444;
+}
+
+.summary-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.summary-text.pass {
+  color: var(--text-computed);
+}
+
+.summary-text.fail {
+  color: #ef4444;
+}

@@ -15,9 +15,9 @@
     PMT: null,
     FV: null,
     
-    // Settings
-    CY: 12,  // Compounding periods per year
-    PY: 12,  // Payment periods per year
+    // Settings (single source of truth)
+    py: 12,  // Payment periods per year
+    cy: 12,  // Compounding periods per year
     BGN: false, // true = beginning of period, false = end
     
     // Entry state
@@ -148,9 +148,9 @@
       }
     });
     
-    // Update settings
-    elements.displayCY.textContent = state.CY;
-    elements.displayPY.textContent = state.PY;
+    // Update settings (read from state.py and state.cy)
+    elements.displayCY.textContent = state.cy;
+    elements.displayPY.textContent = state.py;
     elements.displayBGN.textContent = state.BGN ? 'BGN' : 'END';
     
     // Update entry display
@@ -249,21 +249,8 @@
       if (state.lastComputedVar === varName) {
         state.lastComputedVar = null;
       }
-    } else if (varName === 'CY') {
-      if (value > 0 && value <= 365) {
-        state.CY = Math.round(value);
-      } else {
-        showMessage('C/Y must be 1-365', 'error');
-        return;
-      }
-    } else if (varName === 'PY') {
-      if (value > 0 && value <= 365) {
-        state.PY = Math.round(value);
-      } else {
-        showMessage('P/Y must be 1-365', 'error');
-        return;
-      }
     }
+    // Note: CY and PY are handled by handleSettingKey, not here
     
     state.entry = formatNumber(value).replace(/,/g, '');
     state.isNewEntry = true;
@@ -584,8 +571,8 @@
     const pv = state.PV;
     const pmt = state.PMT;
     const fv = state.FV;
-    const cy = state.CY;
-    const py = state.PY;
+    const cy = state.cy;
+    const py = state.py;
     const isBegin = state.BGN;
     
     let result;
@@ -677,8 +664,10 @@
     state.PV = null;
     state.PMT = null;
     state.FV = null;
-    state.CY = 12;
-    state.PY = 12;
+    state.cy = 12;
+    state.py = 12;
+    console.log('RESET: P/Y set to', state.py);
+    console.log('RESET: C/Y set to', state.cy);
     state.BGN = false;
     state.entry = '0';
     state.isNewEntry = true;
@@ -803,11 +792,90 @@
     updateDisplay();
   }
 
-  // ===== xP/Y (Set P/Y = C/Y) =====
-  
+  // ===== xP/Y (Alias for P/Y) =====
+  // xP/Y behaves exactly like P/Y - it does NOT copy C/Y to P/Y
   function setXPY() {
-    state.PY = state.CY;
-    showMessage(`P/Y set to ${state.PY}`, 'info');
+    // xP/Y is an alias for P/Y - call the same handler
+    handleSettingKey('PY');
+  }
+
+  // ===== P/Y and C/Y SETTER FUNCTIONS =====
+  
+  /**
+   * Set P/Y (payments per year)
+   * @param {number} value - integer 1..999
+   * @returns {boolean} - true if set successfully
+   */
+  function setPY(value) {
+    // Check if value is an integer
+    if (!Number.isInteger(value)) {
+      showMessage('P/Y must be integer', 'error');
+      return false;
+    }
+    if (value < 1 || value > 999) {
+      showMessage('P/Y must be 1-999', 'error');
+      return false;
+    }
+    state.py = value;
+    console.log('P/Y set to', state.py);
+    return true;
+  }
+  
+  /**
+   * Set C/Y (compounding periods per year)
+   * @param {number} value - integer 1..999
+   * @returns {boolean} - true if set successfully
+   */
+  function setCY(value) {
+    // Check if value is an integer
+    if (!Number.isInteger(value)) {
+      showMessage('C/Y must be integer', 'error');
+      return false;
+    }
+    if (value < 1 || value > 999) {
+      showMessage('C/Y must be 1-999', 'error');
+      return false;
+    }
+    state.cy = value;
+    console.log('C/Y set to', state.cy);
+    return true;
+  }
+  
+  /**
+   * Handle P/Y or C/Y button press
+   * - If entry buffer has a value, store it
+   * - If entry buffer is empty, just show current value
+   */
+  function handleSettingKey(varName) {
+    clearMessage();
+    state.rclMode = false;
+    
+    const isPY = (varName === 'PY');
+    const label = isPY ? 'P/Y' : 'C/Y';
+    const currentValue = isPY ? state.py : state.cy;
+    
+    // If entry buffer is empty (0 and new entry), just show current value
+    if (state.isNewEntry && state.entry === '0') {
+      showMessage(`${label} = ${currentValue}`, 'info');
+      state.entry = String(currentValue);
+      state.isNewEntry = true;
+      updateDisplay();
+      return;
+    }
+    
+    // Otherwise, try to store the entered value
+    const value = getEntryValue();
+    
+    // Use the setter function
+    const success = isPY ? setPY(value) : setCY(value);
+    
+    if (success) {
+      showMessage(`${label} = ${isPY ? state.py : state.cy}`, 'success');
+      // Clear entry buffer and refresh
+      state.entry = '0';
+      state.isNewEntry = true;
+    }
+    
     updateDisplay();
   }
 
@@ -975,7 +1043,7 @@
     }
     
     // Convert annual rate to periodic rate (using P/Y)
-    const periodicRate = rate / 100 / state.PY;
+    const periodicRate = rate / 100 / state.py;
     
     // Calculate NPV: CF0 + CF1/(1+r) + CF2/(1+r)^2 + ...
     let npv = 0;
@@ -1075,7 +1143,7 @@
     }
     
     // Convert to annual percentage rate (* P/Y)
-    const irrAnnual = bestR * state.PY * 100;
+    const irrAnnual = bestR * state.py * 100;
     
     state.IY = irrAnnual;
     state.lastComputed = irrAnnual;
@@ -1201,7 +1269,7 @@
     const n = state.N;
     const pv = state.PV;
     const pmt = state.PMT;
-    const i = getPeriodicRate(state.IY, state.CY, state.PY);
+    const i = getPeriodicRate(state.IY, state.cy, state.py);
     const isBegin = state.BGN;
     
     // Calculate amortization for periods P1 to P2
@@ -1277,9 +1345,15 @@
       return;
     }
     
-    // Handle TVM variable keys
+    // Handle TVM variable keys (N, I/Y, PV, PMT, FV)
     if (button.dataset.var) {
       const varName = button.dataset.var;
+      
+      // Handle C/Y and P/Y separately from TVM variables
+      if (varName === 'CY' || varName === 'PY') {
+        handleSettingKey(varName);
+        return;
+      }
       
       if (state.rclMode) {
         recallVariable(varName);
@@ -1499,6 +1573,241 @@
     }
   }
 
+  // ===== DIAGNOSTICS TEST RUNNER =====
+  
+  const diagTests = [
+    {
+      name: 'Test 1: FV of lump sum',
+      setup: { PY: 1, CY: 1, BGN: false, N: 10, IY: 10, PV: -100, PMT: 0, FV: null },
+      solve: 'FV',
+      expected: 259.37,
+      tolerance: 0.1
+    },
+    {
+      name: 'Test 2: PV of lump sum',
+      setup: { PY: 1, CY: 1, BGN: false, N: 10, IY: 10, PV: null, PMT: 0, FV: 259.37 },
+      solve: 'PV',
+      expected: -100,
+      tolerance: 0.1
+    },
+    {
+      name: 'Test 3: Loan payment (END)',
+      setup: { PY: 12, CY: 12, BGN: false, N: 360, IY: 6, PV: 200000, PMT: null, FV: 0 },
+      solve: 'PMT',
+      expected: -1199.10,
+      tolerance: 2
+    },
+    {
+      name: 'Test 4: Interest solve',
+      setup: { PY: 12, CY: 12, BGN: false, N: 360, IY: null, PV: 200000, PMT: -1199.10, FV: 0 },
+      solve: 'IY',
+      expected: 6.0,
+      tolerance: 0.05
+    },
+    {
+      name: 'Test 5: BGN mode check',
+      setup: { PY: 12, CY: 12, BGN: true, N: 360, IY: 6, PV: 200000, PMT: null, FV: 0 },
+      solve: 'PMT',
+      compare: 'Test 3', // BGN PMT should be smaller in magnitude than END PMT
+      compareType: 'lessMagnitude'
+    }
+  ];
+  
+  function runDiagnosticTest(test, previousResults) {
+    // Set up the state
+    const { PY, CY, BGN, N, IY, PV, PMT, FV } = test.setup;
+    
+    const n = N;
+    const iy = IY;
+    const pv = PV;
+    const pmt = PMT;
+    const fv = FV;
+    const cy = CY;
+    const py = PY;
+    const isBegin = BGN;
+    
+    let result;
+    
+    try {
+      switch (test.solve) {
+        case 'FV': {
+          const i = getPeriodicRate(iy, cy, py);
+          result = solveFV(n, i, pv, pmt, isBegin);
+          break;
+        }
+        case 'PV': {
+          const i = getPeriodicRate(iy, cy, py);
+          result = solvePV(n, i, pmt, fv, isBegin);
+          break;
+        }
+        case 'PMT': {
+          const i = getPeriodicRate(iy, cy, py);
+          result = solvePMT(n, i, pv, fv, isBegin);
+          break;
+        }
+        case 'N': {
+          const i = getPeriodicRate(iy, cy, py);
+          result = solveN(i, pv, pmt, fv, isBegin);
+          break;
+        }
+        case 'IY': {
+          result = solveIY(n, pv, pmt, fv, isBegin, cy, py);
+          break;
+        }
+      }
+    } catch (e) {
+      return { 
+        name: test.name, 
+        computed: 'ERROR', 
+        expected: test.expected, 
+        tolerance: test.tolerance,
+        pass: false, 
+        error: e.message 
+      };
+    }
+    
+    // Determine pass/fail
+    let pass = false;
+    let expectedStr = '';
+    
+    if (test.compare) {
+      // Comparison test (Test 5)
+      const refResult = previousResults[test.compare];
+      if (refResult && test.compareType === 'lessMagnitude') {
+        pass = Math.abs(result) < Math.abs(refResult.computed);
+        expectedStr = `|${result.toFixed(4)}| < |${refResult.computed.toFixed(4)}|`;
+      }
+    } else {
+      // Tolerance test
+      pass = Math.abs(result - test.expected) <= test.tolerance;
+      expectedStr = `${test.expected} ± ${test.tolerance}`;
+    }
+    
+    return {
+      name: test.name,
+      computed: result,
+      expected: expectedStr,
+      tolerance: test.tolerance,
+      pass: pass,
+      solve: test.solve
+    };
+  }
+  
+  function runAllDiagnostics() {
+    console.log('=== TVM Diagnostics ===');
+    const results = {};
+    const allResults = [];
+    
+    for (const test of diagTests) {
+      const result = runDiagnosticTest(test, results);
+      results[test.name] = result;
+      allResults.push(result);
+      
+      // Log to console
+      const status = result.pass ? 'PASS' : 'FAIL';
+      console.log(`${status}: ${result.name}`);
+      console.log(`  Computed: ${typeof result.computed === 'number' ? result.computed.toFixed(6) : result.computed}`);
+      console.log(`  Expected: ${result.expected}`);
+      if (!result.pass && result.error) {
+        console.log(`  Error: ${result.error}`);
+      }
+    }
+    
+    const passed = allResults.filter(r => r.pass).length;
+    const total = allResults.length;
+    console.log(`\nResults: ${passed}/${total} tests passed`);
+    
+    return allResults;
+  }
+  
+  function displayDiagResults(results) {
+    const body = document.getElementById('diag-body');
+    if (!body) return;
+    
+    const passed = results.filter(r => r.pass).length;
+    const total = results.length;
+    const allPass = passed === total;
+    
+    let html = '<div class="test-results">';
+    
+    for (const result of results) {
+      const statusClass = result.pass ? 'pass' : 'fail';
+      const statusText = result.pass ? '✓ PASS' : '✗ FAIL';
+      const computedStr = typeof result.computed === 'number' 
+        ? result.computed.toFixed(4) 
+        : result.computed;
+      
+      html += `
+        <div class="test-result ${statusClass}">
+          <div class="test-name">${result.name}</div>
+          <div class="test-details">
+            <span>Solve for: ${result.solve}</span>
+            <span>Computed: ${computedStr}</span>
+            <span>Expected: ${result.expected}</span>
+          </div>
+          <div class="test-status ${statusClass}">${statusText}</div>
+        </div>
+      `;
+    }
+    
+    html += '</div>';
+    
+    // Summary
+    const summaryClass = allPass ? 'all-pass' : 'has-fail';
+    const summaryTextClass = allPass ? 'pass' : 'fail';
+    const summaryIcon = allPass ? '✓' : '✗';
+    
+    html += `
+      <div class="test-summary ${summaryClass}">
+        <div class="summary-text ${summaryTextClass}">
+          ${summaryIcon} ${passed}/${total} Tests Passed
+        </div>
+      </div>
+    `;
+    
+    body.innerHTML = html;
+  }
+  
+  function initDiagnostics() {
+    const diagBtn = document.getElementById('diag-btn');
+    const diagModal = document.getElementById('diag-modal');
+    const diagClose = document.getElementById('diag-close');
+    const diagRun = document.getElementById('diag-run');
+    
+    if (!diagBtn || !diagModal) return;
+    
+    // Open modal
+    diagBtn.addEventListener('click', () => {
+      diagModal.classList.add('show');
+    });
+    
+    // Close modal
+    diagClose.addEventListener('click', () => {
+      diagModal.classList.remove('show');
+    });
+    
+    // Close on backdrop click
+    diagModal.addEventListener('click', (e) => {
+      if (e.target === diagModal) {
+        diagModal.classList.remove('show');
+      }
+    });
+    
+    // Run tests
+    diagRun.addEventListener('click', () => {
+      diagRun.disabled = true;
+      diagRun.textContent = 'Running...';
+      
+      // Small delay for visual feedback
+      setTimeout(() => {
+        const results = runAllDiagnostics();
+        displayDiagResults(results);
+        diagRun.disabled = false;
+        diagRun.textContent = 'Run Tests';
+      }, 100);
+    });
+  }
+
   // ===== INITIALIZATION =====
   
   function init() {
@@ -1521,6 +1830,9 @@
       tvmTable.addEventListener('click', handleTVMRowClick);
     }
     document.addEventListener('keydown', handleKeyboard);
+    
+    // Initialize diagnostics
+    initDiagnostics();
     
     // Initialize mode to TVM
     setMode('tvm');
