@@ -2,7 +2,10 @@
  * Financial Calculator - Time Value of Money
  * Implements standard TVM calculations with proper compounding
  */
-console.log("TVM CALC VERSION = v11");
+console.log("ENTER FIX VERSION = v2");
+
+// Disable service worker to prevent caching issues on GitHub Pages
+const ENABLE_SW = false;
 
 (function() {
   'use strict';
@@ -1729,7 +1732,9 @@ console.log("TVM CALC VERSION = v11");
     // Enter - prevent default and trigger ENTER button click (same code path as UI)
     if (e.key === 'Enter') {
       e.preventDefault();
-      const enterBtn = document.querySelector('[data-action="ENTER"]');
+      e.stopPropagation();
+      const enterBtn = document.querySelector('[data-key="ENTER"]') || 
+                       document.querySelector('[data-action="ENTER"]');
       if (enterBtn) {
         enterBtn.click();
       }
@@ -2116,6 +2121,19 @@ console.log("TVM CALC VERSION = v11");
     // Global keyboard handler - use window and capture phase for reliability
     window.addEventListener('keydown', handleKeyboard, true);
     
+    // Ensure body can receive focus for keyboard events
+    document.body.tabIndex = 0;
+    document.body.focus();
+    
+    // Re-focus body on any click/tap to ensure keyboard works
+    document.addEventListener('click', () => {
+      // Only refocus if not clicking an input/textarea
+      if (document.activeElement.tagName !== 'INPUT' && 
+          document.activeElement.tagName !== 'TEXTAREA') {
+        document.body.focus();
+      }
+    });
+    
     // Initialize diagnostics
     initDiagnostics();
     
@@ -2125,8 +2143,8 @@ console.log("TVM CALC VERSION = v11");
     // Initial display update
     updateDisplay();
     
-    // Register service worker
-    if ('serviceWorker' in navigator) {
+    // Register service worker (disabled to prevent caching issues)
+    if (ENABLE_SW && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js')
         .then(reg => console.log('Service worker registered'))
         .catch(err => console.log('Service worker registration failed:', err));
