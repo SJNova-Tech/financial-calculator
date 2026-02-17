@@ -2,6 +2,7 @@
  * Financial Calculator - Time Value of Money
  * Implements standard TVM calculations with proper compounding
  */
+console.log("TVM CALC VERSION = v11");
 
 (function() {
   'use strict';
@@ -1638,10 +1639,10 @@
           storeCashFlow();
         } else if (state.mode === 'amort') {
           setAmortPeriod();
+        } else if (state.selectedVar && hasEntryValue()) {
+          // In TVM mode, store to the selected variable if user has typed a value
+          storeVariable(state.selectedVar);
         }
-        // In TVM mode, ENTER does NOT auto-store into any register
-        // User must press the specific TVM key (N, I/Y, PV, PMT, FV) to store
-        // This prevents accidental value transfer between registers
         break;
       case 'UP':
         if (state.mode === 'cf') {
@@ -1699,40 +1700,45 @@
   // ===== KEYBOARD SUPPORT =====
   
   function handleKeyboard(e) {
-    // Digits
+    // Ignore if user is typing in an input field
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+      return;
+    }
+    
+    // Digits - prevent default and handle
     if (/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
       appendDigit(e.key);
       return;
     }
     
-    // Decimal
+    // Decimal - prevent default and handle
     if (e.key === '.') {
+      e.preventDefault();
       appendDigit('.');
       return;
     }
     
-    // Backspace
+    // Backspace - prevent default (browser back) and handle
     if (e.key === 'Backspace') {
       e.preventDefault();
       deleteLastChar();
       return;
     }
     
-    // Enter
+    // Enter - prevent default and trigger ENTER button click (same code path as UI)
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (state.mode === 'cf') {
-        storeCashFlow();
-      } else if (state.mode === 'amort') {
-        setAmortPeriod();
-      } else if (state.selectedVar) {
-        storeVariable(state.selectedVar);
+      const enterBtn = document.querySelector('[data-action="ENTER"]');
+      if (enterBtn) {
+        enterBtn.click();
       }
       return;
     }
     
     // Escape - clear or exit mode
     if (e.key === 'Escape') {
+      e.preventDefault();
       if (state.mode !== 'tvm') {
         setMode('tvm');
         showMessage('Returned to TVM mode', 'info');
@@ -1742,15 +1748,32 @@
       return;
     }
     
-    // Operators
-    if (e.key === '+') setOperator('add');
-    if (e.key === '-') setOperator('subtract');
-    if (e.key === '*') setOperator('multiply');
+    // Operators - prevent default and handle
+    if (e.key === '+') {
+      e.preventDefault();
+      setOperator('add');
+      return;
+    }
+    if (e.key === '-') {
+      e.preventDefault();
+      setOperator('subtract');
+      return;
+    }
+    if (e.key === '*') {
+      e.preventDefault();
+      setOperator('multiply');
+      return;
+    }
     if (e.key === '/') {
       e.preventDefault();
       setOperator('divide');
+      return;
     }
-    if (e.key === '=') calculate();
+    if (e.key === '=') {
+      e.preventDefault();
+      calculate();
+      return;
+    }
     
     // Arrow keys
     if (e.key === 'ArrowUp') {
@@ -2090,7 +2113,8 @@
     if (tvmTable) {
       tvmTable.addEventListener('click', handleTVMRowClick);
     }
-    document.addEventListener('keydown', handleKeyboard);
+    // Global keyboard handler - use window and capture phase for reliability
+    window.addEventListener('keydown', handleKeyboard, true);
     
     // Initialize diagnostics
     initDiagnostics();
@@ -2103,7 +2127,7 @@
     
     // Register service worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js')
+      navigator.serviceWorker.register('./sw.js')
         .then(reg => console.log('Service worker registered'))
         .catch(err => console.log('Service worker registration failed:', err));
     }

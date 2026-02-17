@@ -3,27 +3,28 @@
  * Enables offline functionality through caching
  */
 
-const CACHE_NAME = 'fincalc-v17';
-const ASSETS_TO_CACHE = [
+const CACHE_NAME = 'tvm-calc-v11';
+const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
-  './manifest.webmanifest'
+  './manifest.webmanifest',
+  './sw.js'
 ];
 
 // Install event - cache all assets
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker...');
+  console.log('[SW] Installing service worker v11...');
   
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('[SW] Caching app assets');
-        return cache.addAll(ASSETS_TO_CACHE);
+        return cache.addAll(ASSETS);
       })
       .then(() => {
-        console.log('[SW] All assets cached');
+        console.log('[SW] All assets cached, skipping waiting');
         return self.skipWaiting();
       })
       .catch((error) => {
@@ -32,9 +33,9 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and claim clients
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker...');
+  console.log('[SW] Activating service worker v11...');
   
   event.waitUntil(
     caches.keys()
@@ -49,13 +50,13 @@ self.addEventListener('activate', (event) => {
         );
       })
       .then(() => {
-        console.log('[SW] Service worker activated');
+        console.log('[SW] Service worker activated, claiming clients');
         return self.clients.claim();
       })
   );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - cache-first, fallback to network, then offline fallback
 self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') {
@@ -65,16 +66,16 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
       .then((cachedResponse) => {
+        // Return cached version if available (cache-first)
         if (cachedResponse) {
-          // Return cached version
           return cachedResponse;
         }
         
         // Not in cache, try network
         return fetch(event.request)
           .then((networkResponse) => {
-            // Don't cache non-successful responses
-            if (!networkResponse || networkResponse.status !== 200) {
+            // Don't cache non-successful responses or non-same-origin
+            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
               return networkResponse;
             }
             
@@ -88,16 +89,19 @@ self.addEventListener('fetch', (event) => {
             
             return networkResponse;
           })
-          .catch(() => {
-            // Network failed, return offline fallback if it's a navigation request
+          .catch((error) => {
+            console.log('[SW] Fetch failed, returning offline fallback:', error);
+            
+            // Network failed - return cached index.html for navigation requests
             if (event.request.mode === 'navigate') {
               return caches.match('./index.html');
             }
             
-            // Return empty response for other requests
-            return new Response('', {
+            // For other requests, just return a simple offline response
+            return new Response('Offline', {
               status: 503,
-              statusText: 'Service Unavailable'
+              statusText: 'Service Unavailable',
+              headers: { 'Content-Type': 'text/plain' }
             });
           });
       })

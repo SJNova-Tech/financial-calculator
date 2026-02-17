@@ -731,10 +731,14 @@ body {
   justify-content: center;
   align-items: center;
   padding: 1rem;
+  pointer-events: none;
+  visibility: hidden;
 }
 
 .diag-modal.show {
   display: flex;
+  pointer-events: auto;
+  visibility: visible;
 }
 
 .diag-content {
