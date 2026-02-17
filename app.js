@@ -286,6 +286,7 @@
   function storeVariable(varName) {
     clearMessage();
     state.rclMode = false;
+    state.computeArmed = false;
     
     const value = getEntryValue();
     
@@ -299,12 +300,17 @@
       
       const label = varName === 'IY' ? 'I/Y' : varName;
       showMessage(`${label} = ${formatNumber(value)}`, 'success');
+      
+      // Debug logging
+      console.log('Stored', varName, '=', state[varName], 'entryBuffer was:', state.entry);
     }
     // Note: CY and PY are handled by handleSettingKey, not here
     
-    // IMPORTANT: Clear entry buffer after storing to prevent carryover
+    // IMPORTANT: Clear entry buffer IMMEDIATELY after storing to prevent carryover
     state.entry = '0';
     state.isNewEntry = true;
+    console.log('Entry buffer cleared: entry="0", isNewEntry=true');
+    
     updateDisplay();
   }
 
@@ -327,6 +333,7 @@
   function clearRegister(varName) {
     clearMessage();
     state.rclMode = false;
+    state.computeArmed = false;
     
     if (['N', 'IY', 'PV', 'PMT', 'FV'].includes(varName)) {
       state[varName] = null;
@@ -339,6 +346,9 @@
       
       const label = varName === 'IY' ? 'I/Y' : varName;
       showMessage(`${label} cleared`, 'info');
+      
+      // Debug logging
+      console.log('Cleared', varName, 'to null, entryBuffer:', state.entry);
       
       state.entry = '0';
       state.isNewEntry = true;
@@ -905,6 +915,16 @@
 
   // ===== ARROW NAVIGATION =====
   
+  /**
+   * Select a TVM variable row without storing anything
+   * This just highlights the row - does NOT transfer entry buffer value
+   */
+  function selectVariable(varName) {
+    // Do NOT transfer any values - just highlight the row
+    state.selectedVar = varName;
+    updateDisplay();
+  }
+  
   function navigateUp() {
     const vars = ['N', 'IY', 'PV', 'PMT', 'FV'];
     const currentIdx = vars.indexOf(state.selectedVar);
@@ -1029,6 +1049,7 @@
   function handleSettingKey(varName) {
     clearMessage();
     state.rclMode = false;
+    state.computeArmed = false;
     
     const isPY = (varName === 'PY');
     const label = isPY ? 'P/Y' : 'C/Y';
@@ -1042,10 +1063,12 @@
       const success = isPY ? setPY(value) : setCY(value);
       
       if (success) {
+        console.log('Stored', label, '=', isPY ? state.py : state.cy, 'entryBuffer was:', state.entry);
         showMessage(`${label} = ${isPY ? state.py : state.cy}`, 'success');
-        // Clear entry buffer after storing
+        // Clear entry buffer IMMEDIATELY after storing
         state.entry = '0';
         state.isNewEntry = true;
+        console.log('Entry buffer cleared: entry="0", isNewEntry=true');
       }
     } else {
       // Entry buffer is empty - just show current value (don't clear P/Y or C/Y)
@@ -1550,6 +1573,9 @@
     if (button.dataset.var) {
       const varName = button.dataset.var;
       
+      // Debug logging for every TVM key press
+      console.log('Key:', varName, '| entry:', state.entry, '| isNewEntry:', state.isNewEntry, '| hasEntry:', hasEntryValue());
+      
       // Handle C/Y and P/Y separately from TVM variables
       if (varName === 'CY' || varName === 'PY') {
         handleSettingKey(varName);
@@ -1612,9 +1638,10 @@
           storeCashFlow();
         } else if (state.mode === 'amort') {
           setAmortPeriod();
-        } else if (state.selectedVar) {
-          storeVariable(state.selectedVar);
         }
+        // In TVM mode, ENTER does NOT auto-store into any register
+        // User must press the specific TVM key (N, I/Y, PV, PMT, FV) to store
+        // This prevents accidental value transfer between registers
         break;
       case 'UP':
         if (state.mode === 'cf') {
